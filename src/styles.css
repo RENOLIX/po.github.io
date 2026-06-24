@@ -76,114 +76,195 @@ img {
 .intro-gate {
   position: fixed;
   inset: 0;
-  z-index: 999;
-  display: grid;
-  place-items: center;
+  z-index: 9999;
+  display: flex;
   overflow: hidden;
+  pointer-events: none;
   background:
-    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.38), transparent 18rem),
-    linear-gradient(135deg, #f7eadb, #e9d2c2);
-  animation: introFade 0.45s ease 2.02s forwards;
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.78), transparent 21rem),
+    linear-gradient(135deg, #fffaf5 0%, #f3dfd6 48%, #fff7ef 100%);
 }
 
-.glass-door {
+.intro-door {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.intro-pane,
+.intro-sheen,
+.intro-edge {
+  position: absolute;
+  inset: 0;
+}
+
+.intro-pane {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.intro-pane-left {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 232, 241, 0.54) 38%,
+    rgba(255, 255, 255, 0.68) 62%,
+    rgba(248, 204, 224, 0.46) 100%
+  );
+}
+
+.intro-pane-right {
+  background: linear-gradient(
+    225deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 232, 241, 0.54) 38%,
+    rgba(255, 255, 255, 0.68) 62%,
+    rgba(248, 204, 224, 0.46) 100%
+  );
+}
+
+.intro-sheen-left {
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    transparent 30%,
+    rgba(255, 255, 255, 0.18) 60%,
+    transparent 100%
+  );
+}
+
+.intro-sheen-right {
+  background: linear-gradient(
+    70deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.56) 100%
+  );
+}
+
+.intro-handle {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transform: translateY(-50%);
+}
+
+.intro-handle-right {
+  right: 24px;
+}
+
+.intro-handle-left {
+  left: 24px;
+}
+
+.intro-handle span {
+  width: 4px;
+  height: 80px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(180, 180, 180, 0.9), rgba(230, 230, 230, 0.6), rgba(160, 160, 160, 0.9));
+}
+
+.intro-handle i {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9), rgba(180, 190, 200, 0.5));
+}
+
+.intro-edge {
+  width: 2px;
+  background: linear-gradient(180deg, rgba(180, 180, 180, 0.3), rgba(255, 255, 255, 0.6), rgba(180, 180, 180, 0.3));
+}
+
+.intro-edge-right {
+  left: auto;
+  right: 0;
+}
+
+.intro-edge-left {
+  right: auto;
+  left: 0;
+}
+
+.intro-letter {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(68, 25, 43, 0.22);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(4.5rem, 11vw, 9rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.intro-letter-left {
+  right: 40px;
+}
+
+.intro-letter-right {
+  left: 40px;
+}
+
+.intro-center-line {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 50.4%;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 40%, rgba(124, 19, 43, 0.08)),
-    rgba(255, 255, 255, 0.18);
-  box-shadow:
-    inset 0 0 46px rgba(255, 255, 255, 0.28),
-    0 24px 80px rgba(58, 7, 22, 0.18);
-  backdrop-filter: blur(18px) saturate(1.25);
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(164, 118, 138, 0.4) 20%,
+    rgba(255, 245, 249, 0.7) 50%,
+    rgba(164, 118, 138, 0.4) 80%,
+    transparent
+  );
 }
 
-.glass-door::after {
-  content: "";
+.intro-bottom-badge {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
-  transform: skewX(-18deg) translateX(-80%);
-  animation: doorShine 1.45s ease forwards;
-}
-
-.glass-door-left {
-  left: 0;
-  transform-origin: left center;
-  animation: doorLeft 1.35s cubic-bezier(0.76, 0, 0.24, 1) 0.72s forwards;
-}
-
-.glass-door-right {
-  right: 0;
-  transform-origin: right center;
-  animation: doorRight 1.35s cubic-bezier(0.76, 0, 0.24, 1) 0.72s forwards;
-}
-
-.intro-gate-brand {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  color: var(--wine-dark);
-  text-align: center;
-  animation: introBrand 1.3s ease 0.55s forwards;
-}
-
-.intro-gate-brand img {
-  width: min(210px, 46vw);
-  background: transparent;
-}
-
-.intro-gate-brand span {
-  font-family: Georgia, serif;
-  font-size: clamp(1.8rem, 6vw, 4rem);
-}
-
-.intro-gate-brand small {
-  color: var(--muted);
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.38);
+  color: #6d3850;
+  font-size: 0.68rem;
   font-weight: 900;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-@keyframes doorLeft {
-  to {
-    transform: perspective(900px) rotateY(-76deg) translateX(-16%);
-    opacity: 0.18;
+@media (max-width: 640px) {
+  .intro-letter {
+    font-size: clamp(3.4rem, 16vw, 5.6rem);
   }
-}
 
-@keyframes doorRight {
-  to {
-    transform: perspective(900px) rotateY(76deg) translateX(16%);
-    opacity: 0.18;
+  .intro-letter-left {
+    right: 24px;
   }
-}
 
-@keyframes doorShine {
-  to {
-    transform: skewX(-18deg) translateX(130%);
+  .intro-letter-right {
+    left: 24px;
   }
-}
 
-@keyframes introBrand {
-  70% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.94);
-    opacity: 0;
-  }
-}
-
-@keyframes introFade {
-  to {
-    opacity: 0;
-    pointer-events: none;
+  .intro-bottom-badge {
+    bottom: 34px;
+    max-width: calc(100% - 36px);
+    padding-inline: 18px;
+    letter-spacing: 0.2em;
   }
 }
 
@@ -1186,7 +1267,7 @@ svg {
   position: relative;
   min-height: 74px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 12px;
   border: 2px solid transparent;
@@ -1216,17 +1297,6 @@ svg {
   font-size: 1rem;
 }
 
-.delivery-choice em {
-  display: none;
-  border-radius: 999px;
-  padding: 6px 10px;
-  color: #fffaf5;
-  background: var(--wine);
-  font-size: 0.72rem;
-  font-style: normal;
-  font-weight: 950;
-}
-
 .delivery-choice.active {
   border-color: var(--wine);
   color: var(--wine-dark);
@@ -1241,9 +1311,6 @@ svg {
   color: var(--wine-dark);
 }
 
-.delivery-choice.active em {
-  display: inline-flex;
-}
 
 .form-error {
   border-radius: 18px;

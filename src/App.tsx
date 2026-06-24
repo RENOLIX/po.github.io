@@ -86,7 +86,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIntroOpen(false), 2400);
+    const timer = window.setTimeout(() => setIntroOpen(false), 2800);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -183,7 +183,7 @@ function App() {
 
   return (
     <div>
-      {introOpen ? <IntroGate /> : null}
+      {introOpen ? <IntroGate onDone={() => setIntroOpen(false)} /> : null}
       <Header route={route} count={count} menuOpen={menuOpen} setMenuOpen={setMenuOpen} navigate={navigate} />
       {page}
       <Footer navigate={navigate} />
@@ -191,16 +191,53 @@ function App() {
   );
 }
 
-function IntroGate() {
+function IntroGate({ onDone }: { onDone: () => void }) {
+  const [opening, setOpening] = useState(false);
+
+  useEffect(() => {
+    const openTimer = window.setTimeout(() => setOpening(true), 800);
+    const doneTimer = window.setTimeout(onDone, 2400);
+
+    return () => {
+      window.clearTimeout(openTimer);
+      window.clearTimeout(doneTimer);
+    };
+  }, [onDone]);
+
   return (
     <div className="intro-gate" aria-label="Ouverture La Perle d'Orient">
-      <div className="glass-door glass-door-left" />
-      <div className="glass-door glass-door-right" />
-      <div className="intro-gate-brand">
-        <img src={imageUrl("logo-la-perle.png")} alt="La Perle d'Orient" />
-        <span>La Perle d'Orient</span>
-        <small>Ouverture de la boutique</small>
-      </div>
+      <motion.div
+        className="intro-door intro-door-left"
+        animate={opening ? { x: "-100%" } : { x: 0 }}
+        transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
+      >
+        <div className="intro-pane intro-pane-left" />
+        <div className="intro-sheen intro-sheen-left" />
+        <div className="intro-handle intro-handle-right">
+          <span />
+          <i />
+        </div>
+        <div className="intro-edge intro-edge-right" />
+        <div className="intro-letter intro-letter-left">La</div>
+      </motion.div>
+
+      <motion.div
+        className="intro-door intro-door-right"
+        animate={opening ? { x: "100%" } : { x: 0 }}
+        transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
+      >
+        <div className="intro-pane intro-pane-right" />
+        <div className="intro-sheen intro-sheen-right" />
+        <div className="intro-handle intro-handle-left">
+          <span />
+          <i />
+        </div>
+        <div className="intro-edge intro-edge-left" />
+        <div className="intro-letter intro-letter-right">Perle</div>
+      </motion.div>
+
+      <div className="intro-center-line" />
+      <div className="intro-bottom-badge">La Perle d'Orient</div>
     </div>
   );
 }
@@ -728,13 +765,11 @@ function CheckoutPage({
               <input type="radio" checked={form.deliveryMethod === "domicile"} onChange={() => setForm({ ...form, deliveryMethod: "domicile" })} />
               <Truck />
               <strong>Domicile</strong>
-              <em>Selectionne</em>
             </label>
             <label className={form.deliveryMethod === "bureau" ? "delivery-choice active" : "delivery-choice"}>
               <input type="radio" checked={form.deliveryMethod === "bureau"} onChange={() => setForm({ ...form, deliveryMethod: "bureau" })} />
               <MapPin />
               <strong>Bureau</strong>
-              <em>Selectionne</em>
             </label>
           </div>
           <label className="wide">
