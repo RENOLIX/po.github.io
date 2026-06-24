@@ -262,11 +262,11 @@ img {
   }
 
   .intro-letter-left {
-    right: 18px;
+    right: 34px;
   }
 
   .intro-letter-right {
-    left: 14px;
+    left: 28px;
     font-size: clamp(2.35rem, 11vw, 3.45rem);
   }
 
