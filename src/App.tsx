@@ -1,8 +1,10 @@
 import { motion } from "motion/react";
 import {
   ArrowRight,
+  BadgeCheck,
   Check,
   Heart,
+  Images,
   Instagram,
   Mail,
   MapPin,
@@ -13,6 +15,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
+  ShoppingCart,
   Sparkles,
   Star,
   Trash2,
@@ -356,9 +359,24 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
             <h2>Dentelle, satin, ecru, bordeaux. Rien de gratuit, tout doit servir la marque.</h2>
           </div>
           <div className="atelier-cards">
-            <article><strong>01</strong><span>Finitions propres</span><p>Coupes lisibles, textures visibles, cartes produits respirantes.</p></article>
-            <article><strong>02</strong><span>Commande claire</span><p>Panier separe, checkout separe, confirmation separee.</p></article>
-            <article><strong>03</strong><span>Image premium</span><p>Hero visuel fort, sections editoriales et footer complet.</p></article>
+            <article>
+              <i><BadgeCheck /></i>
+              <strong>01</strong>
+              <span>Finitions propres</span>
+              <p>Coupes lisibles, textures visibles, cartes produits respirantes.</p>
+            </article>
+            <article>
+              <i><ShoppingCart /></i>
+              <strong>02</strong>
+              <span>Commande claire</span>
+              <p>Panier separe, checkout separe, confirmation separee.</p>
+            </article>
+            <article>
+              <i><Images /></i>
+              <strong>03</strong>
+              <span>Image premium</span>
+              <p>Hero visuel fort, sections editoriales et footer complet.</p>
+            </article>
           </div>
         </div>
       </section>
@@ -682,8 +700,16 @@ function CheckoutPage({
           </label>
           <div className="delivery-box">
             <span>Mode de livraison</span>
-            <label><input type="radio" checked={form.deliveryMethod === "domicile"} onChange={() => setForm({ ...form, deliveryMethod: "domicile" })} /> Domicile</label>
-            <label><input type="radio" checked={form.deliveryMethod === "bureau"} onChange={() => setForm({ ...form, deliveryMethod: "bureau" })} /> Bureau</label>
+            <label className={form.deliveryMethod === "domicile" ? "delivery-choice active" : "delivery-choice"}>
+              <input type="radio" checked={form.deliveryMethod === "domicile"} onChange={() => setForm({ ...form, deliveryMethod: "domicile" })} />
+              <Truck />
+              <strong>Domicile</strong>
+            </label>
+            <label className={form.deliveryMethod === "bureau" ? "delivery-choice active" : "delivery-choice"}>
+              <input type="radio" checked={form.deliveryMethod === "bureau"} onChange={() => setForm({ ...form, deliveryMethod: "bureau" })} />
+              <MapPin />
+              <strong>Bureau</strong>
+            </label>
           </div>
           <label className="wide">
             Note optionnelle
