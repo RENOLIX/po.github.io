@@ -704,11 +704,13 @@ function CheckoutPage({
               <input type="radio" checked={form.deliveryMethod === "domicile"} onChange={() => setForm({ ...form, deliveryMethod: "domicile" })} />
               <Truck />
               <strong>Domicile</strong>
+              <em>Selectionne</em>
             </label>
             <label className={form.deliveryMethod === "bureau" ? "delivery-choice active" : "delivery-choice"}>
               <input type="radio" checked={form.deliveryMethod === "bureau"} onChange={() => setForm({ ...form, deliveryMethod: "bureau" })} />
               <MapPin />
               <strong>Bureau</strong>
+              <em>Selectionne</em>
             </label>
           </div>
           <label className="wide">

@@ -1061,11 +1061,13 @@ svg {
 }
 
 .delivery-choice {
+  position: relative;
   min-height: 74px;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
+  border: 2px solid transparent;
   border-radius: 22px;
   padding: 16px;
   color: #5a4440;
@@ -1073,7 +1075,7 @@ svg {
   box-shadow:
     inset 10px 10px 20px var(--soft-dark),
     inset -10px -10px 20px var(--soft-light);
-  transition: color 0.2s ease, box-shadow 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .delivery-choice input {
@@ -1092,12 +1094,33 @@ svg {
   font-size: 1rem;
 }
 
+.delivery-choice em {
+  display: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #fffaf5;
+  background: var(--wine);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
 .delivery-choice.active {
-  color: var(--wine);
+  border-color: var(--wine);
+  color: var(--wine-dark);
+  background: #f3ded6;
   box-shadow:
-    inset 14px 14px 24px var(--soft-dark),
-    inset -14px -14px 24px var(--soft-light),
-    0 0 0 2px rgba(124, 19, 43, 0.12);
+    inset 10px 10px 20px rgba(189, 160, 148, 0.95),
+    inset -10px -10px 20px #ffffff,
+    0 0 0 4px rgba(124, 19, 43, 0.12);
+}
+
+.delivery-choice.active svg {
+  color: var(--wine-dark);
+}
+
+.delivery-choice.active em {
+  display: inline-flex;
 }
 
 .form-error {
