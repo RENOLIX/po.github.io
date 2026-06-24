@@ -99,6 +99,61 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [route]);
 
+  useEffect(() => {
+    let observer: IntersectionObserver | null = null;
+    const selectors = [
+      ".hero-content",
+      ".trust-item",
+      ".section-title",
+      ".feature-copy > p",
+      ".creuse-card",
+      ".product-card",
+      ".atelier-grid > div:first-child",
+      ".atelier-cards article",
+      ".editorial-card",
+      ".page-intro",
+      ".shop-toolbar",
+      ".detail-gallery",
+      ".detail-copy",
+      ".cart-page-line",
+      ".summary-card",
+      ".checkout-form",
+      ".about-panel",
+      ".contact-card",
+      ".contact-note",
+      ".success-modal",
+      ".footer-top > *",
+      ".footer-bottom",
+    ];
+
+    const timer = window.setTimeout(() => {
+      const elements = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(",")));
+      const activeObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("reveal-visible");
+              activeObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+      );
+      observer = activeObserver;
+
+      elements.forEach((element, index) => {
+        element.classList.add("reveal-target");
+        element.style.setProperty("--reveal-delay", `${Math.min((index % 6) * 60, 300)}ms`);
+        activeObserver.observe(element);
+      });
+    }, 80);
+
+    return () => {
+      window.clearTimeout(timer);
+      observer?.disconnect();
+    };
+  }, [route]);
+
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const freeShipping = subtotal >= freeShippingThreshold;

@@ -262,11 +262,11 @@ img {
   }
 
   .intro-letter-left {
-    right: 34px;
+    right: 54px;
   }
 
   .intro-letter-right {
-    left: 28px;
+    left: 48px;
     font-size: clamp(2.35rem, 11vw, 3.45rem);
   }
 
@@ -275,6 +275,32 @@ img {
     max-width: calc(100% - 36px);
     padding-inline: 18px;
     letter-spacing: 0.2em;
+  }
+}
+
+.reveal-target {
+  opacity: 0;
+  transform: translateY(30px);
+  filter: blur(4px);
+  transition:
+    opacity 0.7s ease-out var(--reveal-delay, 0ms),
+    transform 0.7s ease-out var(--reveal-delay, 0ms),
+    filter 0.7s ease-out var(--reveal-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+
+.reveal-target.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-target {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
   }
 }
 
