@@ -73,6 +73,120 @@ img {
   pointer-events: none;
 }
 
+.intro-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.38), transparent 18rem),
+    linear-gradient(135deg, #f7eadb, #e9d2c2);
+  animation: introFade 0.45s ease 2.02s forwards;
+}
+
+.glass-door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.4%;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 40%, rgba(124, 19, 43, 0.08)),
+    rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 0 46px rgba(255, 255, 255, 0.28),
+    0 24px 80px rgba(58, 7, 22, 0.18);
+  backdrop-filter: blur(18px) saturate(1.25);
+}
+
+.glass-door::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-18deg) translateX(-80%);
+  animation: doorShine 1.45s ease forwards;
+}
+
+.glass-door-left {
+  left: 0;
+  transform-origin: left center;
+  animation: doorLeft 1.35s cubic-bezier(0.76, 0, 0.24, 1) 0.72s forwards;
+}
+
+.glass-door-right {
+  right: 0;
+  transform-origin: right center;
+  animation: doorRight 1.35s cubic-bezier(0.76, 0, 0.24, 1) 0.72s forwards;
+}
+
+.intro-gate-brand {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: var(--wine-dark);
+  text-align: center;
+  animation: introBrand 1.3s ease 0.55s forwards;
+}
+
+.intro-gate-brand img {
+  width: min(210px, 46vw);
+  background: transparent;
+}
+
+.intro-gate-brand span {
+  font-family: Georgia, serif;
+  font-size: clamp(1.8rem, 6vw, 4rem);
+}
+
+.intro-gate-brand small {
+  color: var(--muted);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+@keyframes doorLeft {
+  to {
+    transform: perspective(900px) rotateY(-76deg) translateX(-16%);
+    opacity: 0.18;
+  }
+}
+
+@keyframes doorRight {
+  to {
+    transform: perspective(900px) rotateY(76deg) translateX(16%);
+    opacity: 0.18;
+  }
+}
+
+@keyframes doorShine {
+  to {
+    transform: skewX(-18deg) translateX(130%);
+  }
+}
+
+@keyframes introBrand {
+  70% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+}
+
+@keyframes introFade {
+  to {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 .nav-shell {
   pointer-events: auto;
   position: relative;
@@ -119,8 +233,16 @@ img {
 }
 
 .main-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border-radius: 999px;
   padding: 11px 15px;
+}
+
+.main-nav a svg {
+  width: 16px;
+  height: 16px;
 }
 
 .main-nav a:hover,
@@ -1349,9 +1471,18 @@ svg {
 }
 
 @media (max-width: 720px) {
+  .site-header {
+    top: 0;
+  }
+
   .nav-shell {
+    width: 100%;
     grid-template-columns: auto auto auto;
-    border-radius: 26px;
+    min-height: 82px;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 10px 18px;
   }
 
   .brand {
@@ -1368,23 +1499,51 @@ svg {
   }
 
   .main-nav {
-    position: absolute;
-    top: calc(100% + 10px);
+    position: fixed;
+    top: 82px;
     left: 0;
     right: 0;
+    width: 100vw;
     display: none;
     flex-direction: column;
     align-items: stretch;
-    border: 1px solid rgba(255, 255, 255, 0.58);
-    border-radius: 24px;
-    padding: 10px;
-    background: rgba(255, 250, 245, 0.96);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(20px);
+    gap: 12px;
+    border: 0;
+    border-radius: 0 0 32px 32px;
+    padding: 18px 18px 24px;
+    background:
+      radial-gradient(circle at 85% 0%, rgba(124, 19, 43, 0.09), transparent 16rem),
+      rgba(255, 255, 255, 0.98);
+    box-shadow: 0 24px 70px rgba(58, 7, 22, 0.16);
+    backdrop-filter: blur(24px);
   }
 
   .main-nav.open {
     display: flex;
+  }
+
+  .main-nav a {
+    min-height: 58px;
+    justify-content: flex-start;
+    border-radius: 20px;
+    padding: 0 18px;
+    color: var(--wine-dark);
+    background: var(--beige-light);
+    box-shadow:
+      inset 8px 8px 16px var(--soft-dark),
+      inset -8px -8px 16px var(--soft-light);
+    font-size: 1.02rem;
+  }
+
+  .main-nav a.active {
+    color: #fffaf5;
+    background: var(--wine-dark);
+    box-shadow: 0 12px 26px rgba(58, 7, 22, 0.16);
+  }
+
+  .main-nav a svg {
+    width: 21px;
+    height: 21px;
   }
 
   .hero {

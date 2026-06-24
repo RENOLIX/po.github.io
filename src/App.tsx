@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   Check,
   Heart,
+  Home,
   Images,
   Instagram,
   Mail,
@@ -20,6 +21,7 @@ import {
   Star,
   Trash2,
   Truck,
+  UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
@@ -66,6 +68,7 @@ function hrefFor(path: string) {
 function App() {
   const [route, setRoute] = useState(currentRoute);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(true);
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("perle-cart") || "[]") as CartItem[];
@@ -80,6 +83,11 @@ function App() {
     const onPop = () => setRoute(currentRoute());
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIntroOpen(false), 2400);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -175,9 +183,24 @@ function App() {
 
   return (
     <div>
+      {introOpen ? <IntroGate /> : null}
       <Header route={route} count={count} menuOpen={menuOpen} setMenuOpen={setMenuOpen} navigate={navigate} />
       {page}
       <Footer navigate={navigate} />
+    </div>
+  );
+}
+
+function IntroGate() {
+  return (
+    <div className="intro-gate" aria-label="Ouverture La Perle d'Orient">
+      <div className="glass-door glass-door-left" />
+      <div className="glass-door glass-door-right" />
+      <div className="intro-gate-brand">
+        <img src={imageUrl("logo-la-perle.png")} alt="La Perle d'Orient" />
+        <span>La Perle d'Orient</span>
+        <small>Ouverture de la boutique</small>
+      </div>
     </div>
   );
 }
@@ -253,10 +276,10 @@ function Header({
   navigate: (path: string) => void;
 }) {
   const links = [
-    { label: "Accueil", to: "/" },
-    { label: "Boutique", to: "/boutique" },
-    { label: "A propos", to: "/a-propos" },
-    { label: "Contact", to: "/contact" },
+    { label: "Accueil", to: "/", icon: Home },
+    { label: "Boutique", to: "/boutique", icon: ShoppingBag },
+    { label: "A propos", to: "/a-propos", icon: UserRound },
+    { label: "Contact", to: "/contact", icon: Phone },
   ];
 
   return (
@@ -272,6 +295,7 @@ function Header({
         <nav className={menuOpen ? "main-nav open" : "main-nav"}>
           {links.map((link) => (
             <LinkButton key={link.to} to={link.to} navigate={navigate} className={route === link.to ? "active" : ""}>
+              <link.icon />
               {link.label}
             </LinkButton>
           ))}
@@ -303,7 +327,7 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
           <h1>La lingerie comme une piece de joaillerie.</h1>
           <p>
             Dentelle fine, satin doux, tons ecru et bordeaux profond. Une boutique elegante,
-            structuree, avec paiement a la livraison.
+            complete, avec paiement a la livraison.
           </p>
           <div className="hero-actions">
             <LinkButton to="/boutique" navigate={navigate} className="button primary">
@@ -325,12 +349,12 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
         </div>
         <div className="feature-copy">
           <p>
-            L'accueil presente la marque, la boutique presente les produits, chaque piece a sa fiche,
-            et le formulaire reste uniquement dans l'etape checkout. Le parcours devient clair, pro et credible.
+            Une selection intime et soignee, pensee pour les femmes qui cherchent une lingerie elegante,
+            confortable et facile a commander depuis l'Algerie.
           </p>
           <div className="creuse-card">
-            <strong>Effet creuse ecru</strong>
-            <span>Boutons et blocs tactiles avec relief interieur, comme ton exemple.</span>
+            <strong>Conseil taille discret</strong>
+            <span>Assistance par telephone ou message avant confirmation, avec livraison a domicile ou en bureau.</span>
           </div>
         </div>
       </section>
@@ -362,20 +386,20 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
             <article>
               <i><BadgeCheck /></i>
               <strong>01</strong>
-              <span>Finitions propres</span>
-              <p>Coupes lisibles, textures visibles, cartes produits respirantes.</p>
+              <span>Finitions soignees</span>
+              <p>Dentelle visible, satin doux et details presentes clairement avant l'achat.</p>
             </article>
             <article>
               <i><ShoppingCart /></i>
               <strong>02</strong>
-              <span>Commande claire</span>
-              <p>Panier separe, checkout separe, confirmation separee.</p>
+              <span>Commande rassurante</span>
+              <p>Panier detaille, validation simple et paiement uniquement a la reception.</p>
             </article>
             <article>
               <i><Images /></i>
               <strong>03</strong>
-              <span>Image premium</span>
-              <p>Hero visuel fort, sections editoriales et footer complet.</p>
+              <span>Presentation premium</span>
+              <p>Photos nettes, packaging elegant et suivi client avant expedition.</p>
             </article>
           </div>
         </div>
@@ -395,11 +419,11 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
           <h3>Packaging cadeau</h3>
           <p>Presentation propre, messages discrets, experience boutique jusqu'a la livraison.</p>
         </div>
-        <div className="editorial-card">
-          <ShieldCheck />
-          <h3>Paiement a reception</h3>
-          <p>Le client valide, la boutique confirme, puis la livraison se fait en Algerie.</p>
-        </div>
+          <div className="editorial-card">
+            <ShieldCheck />
+            <h3>Paiement a reception</h3>
+            <p>Votre commande est confirmee par telephone avant expedition partout en Algerie.</p>
+          </div>
       </section>
     </main>
   );
@@ -438,7 +462,7 @@ function ShopPage({ navigate, addToCart }: PageContext) {
 
   return (
     <main className="page-shell shell">
-      <PageIntro eyebrow="Boutique" title="Toutes les pieces La Perle d'Orient" text="Catalogue structure, recherche, filtres, fiches produit et ajout panier." />
+      <PageIntro eyebrow="Boutique" title="Toutes les pieces La Perle d'Orient" text="Explorez les modeles, choisissez votre taille, puis validez votre panier en quelques etapes." />
       <div className="shop-toolbar">
         <div className="search-box">
           <Search />
@@ -743,7 +767,7 @@ function AboutPage({ navigate }: { navigate: (path: string) => void }) {
       <section className="about-grid">
         <div className="about-panel dark">
           <h2>Notre direction</h2>
-          <p>Dentelle, satin, perle, ecru et bordeaux. Le site doit vendre une sensation de confiance avant de vendre un produit.</p>
+          <p>Une boutique algerienne qui mise sur l'elegance, la discretion et le conseil avant chaque commande.</p>
         </div>
         <div className="about-panel">
           <h3>Selection</h3>
@@ -755,9 +779,10 @@ function AboutPage({ navigate }: { navigate: (path: string) => void }) {
         </div>
       </section>
       <section className="section brand-values">
-        {["Elegance", "Confort", "Discretion", "Presentation"].map((item) => (
-          <div key={item} className="creuse-card"><strong>{item}</strong><span>Code maison La Perle d'Orient</span></div>
-        ))}
+        <div className="creuse-card"><strong>Elegance</strong><span>Pieces choisies pour leur ligne et leur finition.</span></div>
+        <div className="creuse-card"><strong>Confort</strong><span>Tailles lisibles et conseil avant confirmation.</span></div>
+        <div className="creuse-card"><strong>Discretion</strong><span>Commande confirmee avec respect et confidentialite.</span></div>
+        <div className="creuse-card"><strong>Livraison</strong><span>Domicile ou bureau selon la wilaya selectionnee.</span></div>
       </section>
       <button className="button primary" onClick={() => navigate("/boutique")}>Decouvrir la boutique <ArrowRight /></button>
     </main>
