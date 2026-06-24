@@ -3,18 +3,23 @@ import {
   ArrowRight,
   Check,
   Heart,
+  Instagram,
+  Mail,
+  MapPin,
   Menu,
   Minus,
   Phone,
   Plus,
+  Search,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  Star,
   Trash2,
   Truck,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { freeShippingThreshold, products, shippingRates, wilayas, type DeliveryMethod, type Product } from "./data";
 
 type CartItem = {
@@ -32,7 +37,9 @@ type OrderForm = {
   note: string;
 };
 
+const publicBase = import.meta.env.BASE_URL === "./" ? "" : import.meta.env.BASE_URL.replace(/\/$/, "");
 const money = (value: number) => `${value.toLocaleString("fr-DZ")} DA`;
+const imageUrl = (name: string) => `${publicBase}/images/${name}`;
 
 const initialForm: OrderForm = {
   name: "",
@@ -43,7 +50,19 @@ const initialForm: OrderForm = {
   note: "",
 };
 
+function currentRoute() {
+  const raw = window.location.pathname;
+  const stripped = publicBase && raw.startsWith(publicBase) ? raw.slice(publicBase.length) || "/" : raw;
+  return stripped.endsWith("/") && stripped.length > 1 ? stripped.slice(0, -1) : stripped;
+}
+
+function hrefFor(path: string) {
+  return `${publicBase}${path}` || "/";
+}
+
 function App() {
+  const [route, setRoute] = useState(currentRoute);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("perle-cart") || "[]") as CartItem[];
@@ -51,33 +70,47 @@ function App() {
       return [];
     }
   });
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [form, setForm] = useState<OrderForm>(initialForm);
-  const [orderNumber, setOrderNumber] = useState("");
-  const [error, setError] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+
+  useEffect(() => {
+    const onPop = () => setRoute(currentRoute());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("perle-cart", JSON.stringify(cart));
   }, [cart]);
 
+  useEffect(() => {
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [route]);
+
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const freeShipping = subtotal >= freeShippingThreshold;
   const shipping = form.wilaya ? (freeShipping ? 0 : shippingRates[form.wilaya]?.[form.deliveryMethod] ?? 0) : 0;
   const total = subtotal + shipping;
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const addToCart = (product: Product, size = product.sizes[0]) => {
+  const navigate = (path: string) => {
+    window.history.pushState(null, "", hrefFor(path));
+    setRoute(path);
+  };
+
+  const addToCart = (product: Product, size = product.sizes[0], quantity = 1) => {
     setCart((current) => {
-      const existing = current.find((item) => item.product.id === product.id && item.size === size);
-      if (existing) {
+      const found = current.find((item) => item.product.id === product.id && item.size === size);
+      if (found) {
         return current.map((item) =>
-          item.product.id === product.id && item.size === size ? { ...item, quantity: item.quantity + 1 } : item,
+          item.product.id === product.id && item.size === size
+            ? { ...item, quantity: item.quantity + quantity }
+            : item,
         );
       }
-      return [...current, { product, size, quantity: 1 }];
+      return [...current, { product, size, quantity }];
     });
-    setDrawerOpen(true);
   };
 
   const updateQuantity = (productId: string, size: string, quantity: number) => {
@@ -90,19 +123,19 @@ function App() {
 
   const submitOrder = (event: FormEvent) => {
     event.preventDefault();
-    setError("");
+    setCheckoutError("");
 
     if (!cart.length) {
-      setError("Votre panier est vide. Ajoutez au moins un article avant de confirmer.");
+      setCheckoutError("Votre panier est vide. Ajoutez un article avant de valider.");
       return;
     }
 
     if (!form.name.trim() || !/^\d{10}$/.test(form.phone.trim()) || !form.wilaya || !form.address.trim()) {
-      setError("Veuillez remplir le nom, un telephone a 10 chiffres, la wilaya et l'adresse precise.");
+      setCheckoutError("Veuillez remplir le nom, un telephone a 10 chiffres, la wilaya et l'adresse precise.");
       return;
     }
 
-    const nextOrder = {
+    const order = {
       id: `PO-${Date.now().toString().slice(-6)}`,
       customer: form,
       items: cart,
@@ -114,107 +147,251 @@ function App() {
     };
 
     const orders = JSON.parse(localStorage.getItem("perle-orders") || "[]") as unknown[];
-    localStorage.setItem("perle-orders", JSON.stringify([nextOrder, ...orders]));
-    setOrderNumber(nextOrder.id);
+    localStorage.setItem("perle-orders", JSON.stringify([order, ...orders]));
+    localStorage.setItem("perle-last-order", JSON.stringify(order));
     setCart([]);
     setForm(initialForm);
+    navigate("/merci");
   };
+
+  const page = renderPage(route, {
+    cart,
+    count,
+    form,
+    subtotal,
+    shipping,
+    total,
+    freeShipping,
+    checkoutError,
+    navigate,
+    addToCart,
+    updateQuantity,
+    setForm,
+    submitOrder,
+  });
 
   return (
     <div>
-      <header className="site-header">
-        <div className="nav-shell">
-          <a className="brand" href="#accueil" aria-label="La Perle d'Orient">
-            <span>PO</span>
-            <strong>La Perle d'Orient</strong>
-          </a>
-          <button className="icon-button menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-            <Menu />
-          </button>
-          <nav className={menuOpen ? "main-nav open" : "main-nav"}>
-            <a href="#collections" onClick={() => setMenuOpen(false)}>Collections</a>
-            <a href="#experience" onClick={() => setMenuOpen(false)}>Experience</a>
-            <a href="#commande" onClick={() => setMenuOpen(false)}>Commander</a>
-            <a href="tel:0550000000" onClick={() => setMenuOpen(false)}>Contact</a>
-          </nav>
-          <button className="cart-pill" onClick={() => setDrawerOpen(true)} aria-label={`Panier ${count} articles`}>
-            <ShoppingBag />
-            <span>{count}</span>
-          </button>
-        </div>
-      </header>
-
-      <main>
-        <Hero />
-        <TrustBar />
-        <Collections onAdd={addToCart} />
-        <Experience />
-        <Checkout
-          cart={cart}
-          form={form}
-          setForm={setForm}
-          subtotal={subtotal}
-          shipping={shipping}
-          total={total}
-          freeShipping={freeShipping}
-          error={error}
-          onSubmit={submitOrder}
-        />
-      </main>
-
-      <Footer />
-      <CartDrawer
-        open={drawerOpen}
-        cart={cart}
-        subtotal={subtotal}
-        onClose={() => setDrawerOpen(false)}
-        onQuantity={updateQuantity}
-        onRemove={(productId, size) => updateQuantity(productId, size, 0)}
-      />
-      <OrderSuccess orderNumber={orderNumber} onClose={() => setOrderNumber("")} />
+      <Header route={route} count={count} menuOpen={menuOpen} setMenuOpen={setMenuOpen} navigate={navigate} />
+      {page}
+      <Footer navigate={navigate} />
     </div>
   );
 }
 
-function Hero() {
+type PageContext = {
+  cart: CartItem[];
+  count: number;
+  form: OrderForm;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  freeShipping: boolean;
+  checkoutError: string;
+  navigate: (path: string) => void;
+  addToCart: (product: Product, size?: string, quantity?: number) => void;
+  updateQuantity: (productId: string, size: string, quantity: number) => void;
+  setForm: (form: OrderForm) => void;
+  submitOrder: (event: FormEvent) => void;
+};
+
+function renderPage(route: string, context: PageContext) {
+  if (route === "/boutique") return <ShopPage {...context} />;
+  if (route === "/panier") return <CartPage {...context} />;
+  if (route === "/checkout") return <CheckoutPage {...context} />;
+  if (route === "/a-propos") return <AboutPage navigate={context.navigate} />;
+  if (route === "/contact") return <ContactPage />;
+  if (route === "/merci") return <ThanksPage navigate={context.navigate} />;
+  if (route.startsWith("/produit/")) {
+    const id = decodeURIComponent(route.replace("/produit/", ""));
+    const product = products.find((item) => item.id === id);
+    return product ? <ProductPage product={product} {...context} /> : <NotFound navigate={context.navigate} />;
+  }
+  if (route === "/") return <HomePage navigate={context.navigate} addToCart={context.addToCart} />;
+  return <NotFound navigate={context.navigate} />;
+}
+
+function LinkButton({
+  to,
+  navigate,
+  className,
+  children,
+}: {
+  to: string;
+  navigate: (path: string) => void;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <section id="accueil" className="hero">
-      <img src="./images/hero-la-perle.png" alt="Lingerie premium La Perle d'Orient" />
-      <div className="hero-shadow" />
-      <motion.div
-        className="hero-content"
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      >
-        <span className="eyebrow">Boutique premium en Algerie</span>
-        <h1>La lingerie comme un bijou discret.</h1>
-        <p>
-          La Perle d'Orient habille les moments intimes avec dentelle fine, satin doux,
-          teintes ecru et service simple avec paiement a la livraison.
-        </p>
-        <div className="hero-actions">
-          <a className="button primary" href="#collections">
-            Voir les collections <ArrowRight />
-          </a>
-          <a className="button ghost" href="#commande">
-            Commander maintenant
-          </a>
-        </div>
-      </motion.div>
-      <div className="hero-card glass-panel">
-        <strong>Livraison 58 wilayas</strong>
-        <span>Domicile ou bureau, paiement a la reception.</span>
+    <a
+      className={className}
+      href={hrefFor(to)}
+      onClick={(event) => {
+        event.preventDefault();
+        navigate(to);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+function Header({
+  route,
+  count,
+  menuOpen,
+  setMenuOpen,
+  navigate,
+}: {
+  route: string;
+  count: number;
+  menuOpen: boolean;
+  setMenuOpen: (open: boolean) => void;
+  navigate: (path: string) => void;
+}) {
+  const links = [
+    { label: "Accueil", to: "/" },
+    { label: "Boutique", to: "/boutique" },
+    { label: "A propos", to: "/a-propos" },
+    { label: "Contact", to: "/contact" },
+  ];
+
+  return (
+    <header className="site-header">
+      <div className="nav-shell">
+        <LinkButton to="/" navigate={navigate} className="brand">
+          <img src={imageUrl("logo-la-perle.png")} alt="La Perle d'Orient" />
+          <strong>La Perle d'Orient</strong>
+        </LinkButton>
+        <button className="icon-button menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+          {menuOpen ? <X /> : <Menu />}
+        </button>
+        <nav className={menuOpen ? "main-nav open" : "main-nav"}>
+          {links.map((link) => (
+            <LinkButton key={link.to} to={link.to} navigate={navigate} className={route === link.to ? "active" : ""}>
+              {link.label}
+            </LinkButton>
+          ))}
+        </nav>
+        <LinkButton to="/panier" navigate={navigate} className="cart-pill">
+          <ShoppingBag />
+          <span>{count}</span>
+        </LinkButton>
       </div>
-    </section>
+    </header>
+  );
+}
+
+function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; addToCart: PageContext["addToCart"] }) {
+  const featured = products.slice(0, 3);
+
+  return (
+    <main>
+      <section className="hero">
+        <img src={imageUrl("hero-la-perle.png")} alt="La Perle d'Orient lingerie premium" />
+        <div className="hero-shadow" />
+        <motion.div
+          className="hero-content"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        >
+          <span className="eyebrow">Lingerie premium en Algerie</span>
+          <h1>La lingerie comme une piece de joaillerie.</h1>
+          <p>
+            Dentelle fine, satin doux, tons ecru et bordeaux profond. Une boutique elegante,
+            structuree, avec paiement a la livraison.
+          </p>
+          <div className="hero-actions">
+            <LinkButton to="/boutique" navigate={navigate} className="button primary">
+              Explorer la boutique <ArrowRight />
+            </LinkButton>
+            <LinkButton to="/a-propos" navigate={navigate} className="button ghost">
+              L'univers de la marque
+            </LinkButton>
+          </div>
+        </motion.div>
+      </section>
+
+      <TrustBar />
+
+      <section className="section shell split-feature">
+        <div className="section-title">
+          <span className="eyebrow">Maison La Perle</span>
+          <h2>Une boutique pensee comme un salon prive.</h2>
+        </div>
+        <div className="feature-copy">
+          <p>
+            L'accueil presente la marque, la boutique presente les produits, chaque piece a sa fiche,
+            et le formulaire reste uniquement dans l'etape checkout. Le parcours devient clair, pro et credible.
+          </p>
+          <div className="creuse-card">
+            <strong>Effet creuse ecru</strong>
+            <span>Boutons et blocs tactiles avec relief interieur, comme ton exemple.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="section shell">
+        <div className="title-row">
+          <div className="section-title">
+            <span className="eyebrow">Selection</span>
+            <h2>Pieces signatures</h2>
+          </div>
+          <LinkButton to="/boutique" navigate={navigate} className="text-link">
+            Voir toute la boutique <ArrowRight />
+          </LinkButton>
+        </div>
+        <div className="product-grid">
+          {featured.map((product, index) => (
+            <ProductCard key={product.id} product={product} index={index} navigate={navigate} addToCart={addToCart} />
+          ))}
+        </div>
+      </section>
+
+      <section className="section atelier-band">
+        <div className="shell atelier-grid">
+          <div>
+            <span className="eyebrow">Details couture</span>
+            <h2>Dentelle, satin, ecru, bordeaux. Rien de gratuit, tout doit servir la marque.</h2>
+          </div>
+          <div className="atelier-cards">
+            <article><strong>01</strong><span>Finitions propres</span><p>Coupes lisibles, textures visibles, cartes produits respirantes.</p></article>
+            <article><strong>02</strong><span>Commande claire</span><p>Panier separe, checkout separe, confirmation separee.</p></article>
+            <article><strong>03</strong><span>Image premium</span><p>Hero visuel fort, sections editoriales et footer complet.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section className="section shell editorial-grid">
+        <div className="editorial-card large">
+          <span className="eyebrow">Nouvelle capsule</span>
+          <h2>Nuit de Rose</h2>
+          <p>Une ligne bordeaux profonde, pensee pour donner une presence de grande marque.</p>
+          <LinkButton to="/produit/nuit-de-rose" navigate={navigate} className="button creuse">
+            Voir la fiche produit
+          </LinkButton>
+        </div>
+        <div className="editorial-card">
+          <Sparkles />
+          <h3>Packaging cadeau</h3>
+          <p>Presentation propre, messages discrets, experience boutique jusqu'a la livraison.</p>
+        </div>
+        <div className="editorial-card">
+          <ShieldCheck />
+          <h3>Paiement a reception</h3>
+          <p>Le client valide, la boutique confirme, puis la livraison se fait en Algerie.</p>
+        </div>
+      </section>
+    </main>
   );
 }
 
 function TrustBar() {
   const items = [
-    { icon: Truck, title: "Livraison rapide", text: "Tarif calcule par wilaya" },
-    { icon: ShieldCheck, title: "Paiement a la livraison", text: "Validation simple et rassurante" },
-    { icon: Sparkles, title: "Selection premium", text: "Dentelle, satin et finitions soignees" },
+    { icon: Truck, title: "Livraison 58 wilayas", text: "Domicile ou bureau" },
+    { icon: ShieldCheck, title: "Paiement a la livraison", text: "Pas de paiement en ligne impose" },
+    { icon: Sparkles, title: "Selection premium", text: "Dentelle, satin, ecru et bordeaux" },
   ];
 
   return (
@@ -232,59 +409,78 @@ function TrustBar() {
   );
 }
 
-function Collections({ onAdd }: { onAdd: (product: Product, size?: string) => void }) {
+function ShopPage({ navigate, addToCart }: PageContext) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Toutes");
+  const categories = ["Toutes", ...Array.from(new Set(products.map((product) => product.category)))];
+  const filtered = products.filter((product) => {
+    const text = `${product.name} ${product.category} ${product.tone}`.toLowerCase();
+    return (category === "Toutes" || product.category === category) && text.includes(query.toLowerCase());
+  });
+
   return (
-    <section id="collections" className="section shell">
-      <div className="section-title">
-        <span className="eyebrow">Catalogue</span>
-        <h2>Collections signature</h2>
-        <p>Un univers chic inspire des grandes maisons, avec une direction plus orientale, douce et ecru.</p>
+    <main className="page-shell shell">
+      <PageIntro eyebrow="Boutique" title="Toutes les pieces La Perle d'Orient" text="Catalogue structure, recherche, filtres, fiches produit et ajout panier." />
+      <div className="shop-toolbar">
+        <div className="search-box">
+          <Search />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une piece..." />
+        </div>
+        <div className="filter-row">
+          {categories.map((item) => (
+            <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>
+              {item}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="product-grid">
-        {products.map((product, index) => (
-          <ProductCard key={product.id} product={product} index={index} onAdd={onAdd} />
+      <div className="product-grid shop-grid">
+        {filtered.map((product, index) => (
+          <ProductCard key={product.id} product={product} index={index} navigate={navigate} addToCart={addToCart} />
         ))}
       </div>
-    </section>
+    </main>
   );
 }
 
 function ProductCard({
   product,
   index,
-  onAdd,
+  navigate,
+  addToCart,
 }: {
   product: Product;
   index: number;
-  onAdd: (product: Product, size?: string) => void;
+  navigate: (path: string) => void;
+  addToCart: PageContext["addToCart"];
 }) {
   const [size, setSize] = useState(product.sizes[0]);
 
   return (
     <motion.article
       className="product-card"
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.5, delay: Math.min(index * 0.06, 0.2) }}
+      transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.18) }}
     >
-      <div className="product-image">
-        <img src={product.image} alt={product.name} />
+      <LinkButton to={`/produit/${product.id}`} navigate={navigate} className="product-image">
+        <img src={imageUrl(product.image)} alt={product.name} />
         <span>{product.badge}</span>
-        <button aria-label="Ajouter aux favoris">
-          <Heart />
-        </button>
-      </div>
+        <i><Heart /></i>
+      </LinkButton>
       <div className="product-copy">
         <div className="product-meta">
           <span>{product.category}</span>
-          <span>{product.tone}</span>
+          <span><Star fill="currentColor" /> 4.9</span>
         </div>
-        <h3>{product.name}</h3>
+        <LinkButton to={`/produit/${product.id}`} navigate={navigate} className="product-title-link">
+          <h3>{product.name}</h3>
+        </LinkButton>
         <p>{product.description}</p>
         <div className="size-row">
           {product.sizes.map((entry) => (
-            <button key={entry} className={entry === size ? "active" : ""} onClick={() => setSize(entry)}>
+            <button key={entry} className={size === entry ? "active" : ""} onClick={() => setSize(entry)}>
               {entry}
             </button>
           ))}
@@ -294,7 +490,7 @@ function ProductCard({
             <strong>{money(product.price)}</strong>
             {product.compareAt ? <del>{money(product.compareAt)}</del> : null}
           </div>
-          <button className="add-button" onClick={() => onAdd(product, size)}>
+          <button className="add-button creuse-small" onClick={() => addToCart(product, size)}>
             <Plus /> Ajouter
           </button>
         </div>
@@ -303,29 +499,138 @@ function ProductCard({
   );
 }
 
-function Experience() {
+function ProductPage({ product, navigate, addToCart }: PageContext & { product: Product }) {
+  const [size, setSize] = useState(product.sizes[0]);
+  const [quantity, setQuantity] = useState(1);
+
   return (
-    <section id="experience" className="section experience">
-      <div className="shell experience-grid">
-        <div className="glass-panel mood-card">
-          <span className="eyebrow">UI / UX boutique</span>
-          <h2>Une experience douce, premium et rapide.</h2>
-          <p>
-            Les blocs en verre gardent le site leger, tandis que les touches ecru donnent le cote naturel,
-            chaud et luxueux demande pour les descriptions et les boutons.
-          </p>
-        </div>
-        <div className="ritual-list">
-          <div><span>01</span><strong>Choisir la taille</strong><small>S, M, L, XL selon article.</small></div>
-          <div><span>02</span><strong>Ajouter au panier</strong><small>Le panier reste sauvegarde sur le navigateur.</small></div>
-          <div><span>03</span><strong>Commander</strong><small>Nom, telephone, wilaya, adresse et livraison.</small></div>
-        </div>
+    <main className="page-shell shell">
+      <div className="product-detail">
+        <section className="detail-gallery">
+          <img src={imageUrl(product.image)} alt={product.name} />
+          <div className="detail-note glass-panel">
+            <span>{product.badge}</span>
+            <strong>{product.tone}</strong>
+          </div>
+        </section>
+        <section className="detail-copy">
+          <LinkButton to="/boutique" navigate={navigate} className="back-link">Retour boutique</LinkButton>
+          <span className="eyebrow">{product.category}</span>
+          <h1>{product.name}</h1>
+          <p>{product.longDescription}</p>
+          <div className="detail-price">
+            <strong>{money(product.price)}</strong>
+            {product.compareAt ? <del>{money(product.compareAt)}</del> : null}
+          </div>
+          <div className="detail-options">
+            <span>Taille</span>
+            <div className="size-row">
+              {product.sizes.map((entry) => (
+                <button key={entry} className={size === entry ? "active" : ""} onClick={() => setSize(entry)}>
+                  {entry}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="quantity-card">
+            <span>Quantite</span>
+            <div className="quantity">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus /></button>
+              <b>{quantity}</b>
+              <button onClick={() => setQuantity(quantity + 1)}><Plus /></button>
+            </div>
+          </div>
+          <div className="detail-actions">
+            <button
+              className="button primary"
+              onClick={() => {
+                addToCart(product, size, quantity);
+                navigate("/panier");
+              }}
+            >
+              Ajouter au panier <ShoppingBag />
+            </button>
+            <button className="button creuse" onClick={() => addToCart(product, size, quantity)}>
+              Ajouter et continuer
+            </button>
+          </div>
+          <div className="detail-list">
+            {product.details.map((detail) => (
+              <p key={detail}><Check /> {detail}</p>
+            ))}
+            <p><Sparkles /> Conseil entretien: {product.care}</p>
+          </div>
+        </section>
       </div>
-    </section>
+      <section className="section related-section">
+        <div className="title-row">
+          <div className="section-title compact">
+            <span className="eyebrow">A decouvrir aussi</span>
+            <h2>Pieces proches</h2>
+          </div>
+        </div>
+        <div className="product-grid">
+          {products.filter((item) => item.id !== product.id).slice(0, 3).map((item, index) => (
+            <ProductCard key={item.id} product={item} index={index} navigate={navigate} addToCart={addToCart} />
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }
 
-function Checkout({
+function CartPage({ cart, subtotal, updateQuantity, navigate }: PageContext) {
+  return (
+    <main className="page-shell shell">
+      <PageIntro eyebrow="Panier" title="Votre selection" text="Une vraie page panier, avec quantites, tailles, suppression et passage au checkout." />
+      <div className="cart-page-grid">
+        <section className="cart-page-list">
+          {cart.length ? (
+            cart.map((item) => (
+              <article className="cart-page-line" key={`${item.product.id}-${item.size}`}>
+                <img src={imageUrl(item.product.image)} alt={item.product.name} />
+                <div>
+                  <strong>{item.product.name}</strong>
+                  <span>{item.product.category} / Taille {item.size}</span>
+                  <small>{money(item.product.price)}</small>
+                </div>
+                <div className="quantity">
+                  <button onClick={() => updateQuantity(item.product.id, item.size, item.quantity - 1)}><Minus /></button>
+                  <b>{item.quantity}</b>
+                  <button onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}><Plus /></button>
+                </div>
+                <button className="remove" onClick={() => updateQuantity(item.product.id, item.size, 0)} aria-label="Supprimer">
+                  <Trash2 />
+                </button>
+              </article>
+            ))
+          ) : (
+            <div className="empty-state">
+              <ShoppingBag />
+              <h2>Votre panier est vide</h2>
+              <p>Retournez a la boutique et choisissez une piece.</p>
+              <button className="button primary" onClick={() => navigate("/boutique")}>Voir la boutique</button>
+            </div>
+          )}
+        </section>
+        <aside className="summary-card glass-panel">
+          <span className="eyebrow">Resume</span>
+          <div className="summary-lines">
+            <p><span>Articles</span><strong>{cart.reduce((sum, item) => sum + item.quantity, 0)}</strong></p>
+            <p><span>Sous-total</span><strong>{money(subtotal)}</strong></p>
+            <p><span>Livraison</span><strong>Calculee au checkout</strong></p>
+          </div>
+          <div className="total-line"><span>Total provisoire</span><strong>{money(subtotal)}</strong></div>
+          <button className="button primary full" onClick={() => navigate(cart.length ? "/checkout" : "/boutique")}>
+            {cart.length ? "Passer au checkout" : "Remplir le panier"} <ArrowRight />
+          </button>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+function CheckoutPage({
   cart,
   form,
   setForm,
@@ -333,33 +638,20 @@ function Checkout({
   shipping,
   total,
   freeShipping,
-  error,
-  onSubmit,
-}: {
-  cart: CartItem[];
-  form: OrderForm;
-  setForm: (form: OrderForm) => void;
-  subtotal: number;
-  shipping: number;
-  total: number;
-  freeShipping: boolean;
-  error: string;
-  onSubmit: (event: FormEvent) => void;
-}) {
+  checkoutError,
+  submitOrder,
+  navigate,
+}: PageContext) {
   const summary = useMemo(
     () => cart.map((item) => `${item.quantity}x ${item.product.name} (${item.size})`).join(", "),
     [cart],
   );
 
   return (
-    <section id="commande" className="section shell checkout-section">
-      <div className="section-title">
-        <span className="eyebrow">Paiement a la livraison</span>
-        <h2>Formulaire de commande</h2>
-        <p>Structure inspiree du formulaire Atlas Miel: donnees client, wilaya, adresse, quantite, livraison et total.</p>
-      </div>
+    <main className="page-shell shell">
+      <PageIntro eyebrow="Checkout" title="Paiement a la livraison" text="Le formulaire est separe de l'accueil: nom, telephone, wilaya, adresse, livraison et recapitulatif." />
       <div className="checkout-grid">
-        <form className="checkout-form glass-panel" onSubmit={onSubmit}>
+        <form className="checkout-form glass-panel" onSubmit={submitOrder}>
           <label>
             Nom et prenom
             <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Ex: Lina Benali" />
@@ -390,148 +682,156 @@ function Checkout({
           </label>
           <div className="delivery-box">
             <span>Mode de livraison</span>
-            <label>
-              <input
-                type="radio"
-                checked={form.deliveryMethod === "domicile"}
-                onChange={() => setForm({ ...form, deliveryMethod: "domicile" })}
-              />
-              Domicile
-            </label>
-            <label>
-              <input
-                type="radio"
-                checked={form.deliveryMethod === "bureau"}
-                onChange={() => setForm({ ...form, deliveryMethod: "bureau" })}
-              />
-              Bureau
-            </label>
+            <label><input type="radio" checked={form.deliveryMethod === "domicile"} onChange={() => setForm({ ...form, deliveryMethod: "domicile" })} /> Domicile</label>
+            <label><input type="radio" checked={form.deliveryMethod === "bureau"} onChange={() => setForm({ ...form, deliveryMethod: "bureau" })} /> Bureau</label>
           </div>
           <label className="wide">
             Note optionnelle
             <textarea value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="Couleur preferee, disponibilite, details de livraison..." />
           </label>
-          {error ? <div className="form-error">{error}</div> : null}
-          <button className="button primary full">
-            Confirmer la commande <ArrowRight />
-          </button>
+          {checkoutError ? <div className="form-error">{checkoutError}</div> : null}
+          <button className="button primary full">Confirmer la commande <ArrowRight /></button>
         </form>
-        <aside className="order-summary">
-          <div className="glass-panel summary-card">
-            <span className="eyebrow">Votre panier</span>
-            <h3>{cart.length ? summary : "Aucun article selectionne"}</h3>
-            <div className="summary-lines">
-              <p><span>Sous-total</span><strong>{money(subtotal)}</strong></p>
-              <p><span>Livraison</span><strong>{form.wilaya ? (freeShipping ? "Offerte" : money(shipping)) : "A calculer"}</strong></p>
-              <p><span>Paiement</span><strong>A la livraison</strong></p>
-            </div>
-            <div className="total-line">
-              <span>Total</span>
-              <strong>{money(total)}</strong>
-            </div>
-            <small>
-              Livraison offerte a partir de {money(freeShippingThreshold)}. Les commandes sont enregistrees localement pour cette version statique.
-            </small>
+        <aside className="summary-card glass-panel">
+          <span className="eyebrow">Commande</span>
+          <h3>{cart.length ? summary : "Aucun article dans le panier"}</h3>
+          <div className="summary-lines">
+            <p><span>Sous-total</span><strong>{money(subtotal)}</strong></p>
+            <p><span>Livraison</span><strong>{form.wilaya ? (freeShipping ? "Offerte" : money(shipping)) : "A calculer"}</strong></p>
+            <p><span>Paiement</span><strong>A la livraison</strong></p>
           </div>
+          <div className="total-line"><span>Total</span><strong>{money(total)}</strong></div>
+          <button className="button creuse full" onClick={() => navigate("/panier")}>Modifier le panier</button>
         </aside>
       </div>
+    </main>
+  );
+}
+
+function AboutPage({ navigate }: { navigate: (path: string) => void }) {
+  return (
+    <main className="page-shell shell">
+      <PageIntro eyebrow="A propos" title="La Perle d'Orient, une boutique algerienne avec une presence luxe." text="Une identite douce, feminine, premium, inspiree des codes des grandes maisons sans copier une marque." />
+      <section className="about-grid">
+        <div className="about-panel dark">
+          <h2>Notre direction</h2>
+          <p>Dentelle, satin, perle, ecru et bordeaux. Le site doit vendre une sensation de confiance avant de vendre un produit.</p>
+        </div>
+        <div className="about-panel">
+          <h3>Selection</h3>
+          <p>Chaque piece est presentee avec taille, description, entretien et fiche produit dediee.</p>
+        </div>
+        <div className="about-panel">
+          <h3>Service</h3>
+          <p>Paiement a la livraison, confirmation par telephone et livraison sur les wilayas d'Algerie.</p>
+        </div>
+      </section>
+      <section className="section brand-values">
+        {["Elegance", "Confort", "Discretion", "Presentation"].map((item) => (
+          <div key={item} className="creuse-card"><strong>{item}</strong><span>Code maison La Perle d'Orient</span></div>
+        ))}
+      </section>
+      <button className="button primary" onClick={() => navigate("/boutique")}>Decouvrir la boutique <ArrowRight /></button>
+    </main>
+  );
+}
+
+function ContactPage() {
+  return (
+    <main className="page-shell shell">
+      <PageIntro eyebrow="Contact" title="Besoin d'aide pour choisir ?" text="Une page contact claire, rassurante et adaptee a une boutique locale." />
+      <section className="contact-grid">
+        <a className="contact-card glass-panel" href="tel:0550000000"><Phone /><strong>Telephone</strong><span>0550 00 00 00</span></a>
+        <a className="contact-card glass-panel" href="mailto:contact@laperledorient.dz"><Mail /><strong>Email</strong><span>contact@laperledorient.dz</span></a>
+        <div className="contact-card glass-panel"><MapPin /><strong>Algerie</strong><span>Livraison disponible sur 58 wilayas</span></div>
+      </section>
+      <section className="contact-note">
+        <h2>Horaires</h2>
+        <p>Samedi - Jeudi / 9h - 18h. Confirmation des commandes par telephone avant expedition.</p>
+      </section>
+    </main>
+  );
+}
+
+function ThanksPage({ navigate }: { navigate: (path: string) => void }) {
+  const order = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("perle-last-order") || "{}") as { id?: string; total?: number };
+    } catch {
+      return {};
+    }
+  })();
+
+  return (
+    <main className="page-shell shell thanks-page">
+      <div className="success-modal glass-panel inline">
+        <div><Check /></div>
+        <span className="eyebrow">Commande recue</span>
+        <h1>{order.id || "Merci"}</h1>
+        <p>La commande a ete enregistree. La boutique confirme par telephone avant livraison.</p>
+        {order.total ? <strong>Total: {money(order.total)}</strong> : null}
+        <button className="button primary full" onClick={() => navigate("/boutique")}>Retour boutique</button>
+      </div>
+    </main>
+  );
+}
+
+function PageIntro({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
+  return (
+    <section className="page-intro">
+      <span className="eyebrow">{eyebrow}</span>
+      <h1>{title}</h1>
+      <p>{text}</p>
     </section>
   );
 }
 
-function CartDrawer({
-  open,
-  cart,
-  subtotal,
-  onClose,
-  onQuantity,
-  onRemove,
-}: {
-  open: boolean;
-  cart: CartItem[];
-  subtotal: number;
-  onClose: () => void;
-  onQuantity: (productId: string, size: string, quantity: number) => void;
-  onRemove: (productId: string, size: string) => void;
-}) {
+function NotFound({ navigate }: { navigate: (path: string) => void }) {
   return (
-    <>
-      <button className={open ? "drawer-backdrop visible" : "drawer-backdrop"} onClick={onClose} aria-label="Fermer le panier" />
-      <aside className={open ? "cart-drawer visible" : "cart-drawer"}>
-        <div className="drawer-head">
-          <div>
-            <span className="eyebrow">Selection</span>
-            <h2>Panier</h2>
-          </div>
-          <button className="icon-button" onClick={onClose} aria-label="Fermer">
-            <X />
-          </button>
-        </div>
-        <div className="cart-lines">
-          {cart.length ? (
-            cart.map((item) => (
-              <article className="cart-line" key={`${item.product.id}-${item.size}`}>
-                <img src={item.product.image} alt={item.product.name} />
-                <div>
-                  <strong>{item.product.name}</strong>
-                  <small>Taille {item.size}</small>
-                  <span>{money(item.product.price)}</span>
-                  <div className="quantity">
-                    <button onClick={() => onQuantity(item.product.id, item.size, item.quantity - 1)} aria-label="Diminuer"><Minus /></button>
-                    <b>{item.quantity}</b>
-                    <button onClick={() => onQuantity(item.product.id, item.size, item.quantity + 1)} aria-label="Augmenter"><Plus /></button>
-                  </div>
-                </div>
-                <button className="remove" onClick={() => onRemove(item.product.id, item.size)} aria-label="Supprimer">
-                  <Trash2 />
-                </button>
-              </article>
-            ))
-          ) : (
-            <div className="empty-cart">
-              <ShoppingBag />
-              <h3>Panier vide</h3>
-              <p>Ajoutez une piece signature pour commencer.</p>
-            </div>
-          )}
-        </div>
-        <div className="drawer-total">
-          <p><span>Sous-total</span><strong>{money(subtotal)}</strong></p>
-          <a className="button primary full" href="#commande" onClick={onClose}>
-            Commander <ArrowRight />
-          </a>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-function OrderSuccess({ orderNumber, onClose }: { orderNumber: string; onClose: () => void }) {
-  if (!orderNumber) return null;
-
-  return (
-    <div className="success-backdrop">
-      <div className="success-modal glass-panel">
-        <div><Check /></div>
-        <span className="eyebrow">Commande recue</span>
-        <h2>{orderNumber}</h2>
-        <p>Votre commande est sauvegardee. La boutique pourra confirmer par telephone avant livraison.</p>
-        <button className="button primary full" onClick={onClose}>Fermer</button>
+    <main className="page-shell shell thanks-page">
+      <div className="empty-state">
+        <h1>Page introuvable</h1>
+        <p>Retournez vers la boutique.</p>
+        <button className="button primary" onClick={() => navigate("/")}>Accueil</button>
       </div>
-    </div>
+    </main>
   );
 }
 
-function Footer() {
+function Footer({ navigate }: { navigate: (path: string) => void }) {
   return (
-    <footer className="footer">
-      <div className="shell footer-grid">
-        <div>
+    <footer className="footer-pro">
+      <div className="shell footer-top">
+        <div className="footer-brand">
+          <img src={imageUrl("logo-la-perle.png")} alt="La Perle d'Orient" />
           <strong>La Perle d'Orient</strong>
-          <p>Lingerie premium en Algerie. Direction artistique ecru, verre, satin et rose-gold.</p>
+          <p>Boutique de lingerie premium en Algerie. Dentelle fine, satin doux, paiement a la livraison.</p>
+          <div className="social-row">
+            <a href="#instagram" aria-label="Instagram"><Instagram /></a>
+            <a href="mailto:contact@laperledorient.dz" aria-label="Email"><Mail /></a>
+          </div>
         </div>
-        <a href="tel:0550000000"><Phone /> 0550 00 00 00</a>
-        <a href="#commande"><ShoppingBag /> Paiement a la livraison</a>
+        <div>
+          <h3>Boutique</h3>
+          <button onClick={() => navigate("/boutique")}>Toutes les pieces</button>
+          <button onClick={() => navigate("/panier")}>Panier</button>
+          <button onClick={() => navigate("/checkout")}>Checkout</button>
+        </div>
+        <div>
+          <h3>Maison</h3>
+          <button onClick={() => navigate("/a-propos")}>A propos</button>
+          <button onClick={() => navigate("/contact")}>Contact</button>
+          <a href="tel:0550000000">0550 00 00 00</a>
+        </div>
+        <div className="footer-newsletter">
+          <h3>Note privee</h3>
+          <p>Recevoir les nouveautes, capsules et offres de lancement.</p>
+          <div><input placeholder="Votre email" /><button className="button creuse">S'inscrire</button></div>
+        </div>
+      </div>
+      <div className="shell footer-bottom">
+        <span>2026 La Perle d'Orient. Tous droits reserves.</span>
+        <span>Livraison en Algerie / Paiement a la reception</span>
       </div>
     </footer>
   );
