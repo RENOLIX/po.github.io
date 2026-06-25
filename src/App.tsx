@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -97,61 +96,6 @@ function App() {
   useEffect(() => {
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [route]);
-
-  useEffect(() => {
-    let observer: IntersectionObserver | null = null;
-    const selectors = [
-      ".hero-content",
-      ".trust-item",
-      ".section-title",
-      ".feature-copy > p",
-      ".creuse-card",
-      ".product-card",
-      ".atelier-grid > div:first-child",
-      ".atelier-cards article",
-      ".editorial-card",
-      ".page-intro",
-      ".shop-toolbar",
-      ".detail-gallery",
-      ".detail-copy",
-      ".cart-page-line",
-      ".summary-card",
-      ".checkout-form",
-      ".about-panel",
-      ".contact-card",
-      ".contact-note",
-      ".success-modal",
-      ".footer-top > *",
-      ".footer-bottom",
-    ];
-
-    const timer = window.setTimeout(() => {
-      const elements = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(",")));
-      const activeObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("reveal-visible");
-              activeObserver.unobserve(entry.target);
-            }
-          });
-        },
-        { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
-      );
-      observer = activeObserver;
-
-      elements.forEach((element, index) => {
-        element.classList.add("reveal-target");
-        element.style.setProperty("--reveal-delay", `${Math.min((index % 6) * 60, 300)}ms`);
-        activeObserver.observe(element);
-      });
-    }, 80);
-
-    return () => {
-      window.clearTimeout(timer);
-      observer?.disconnect();
-    };
   }, [route]);
 
   const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -261,11 +205,7 @@ function IntroGate({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="intro-gate" aria-label="Ouverture La Perle d'Orient">
-      <motion.div
-        className="intro-door intro-door-left"
-        animate={opening ? { x: "-100%" } : { x: 0 }}
-        transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
-      >
+      <div className={opening ? "intro-door intro-door-left opening" : "intro-door intro-door-left"}>
         <div className="intro-pane intro-pane-left" />
         <div className="intro-sheen intro-sheen-left" />
         <div className="intro-handle intro-handle-right">
@@ -274,13 +214,9 @@ function IntroGate({ onDone }: { onDone: () => void }) {
         </div>
         <div className="intro-edge intro-edge-right" />
         <div className="intro-letter intro-letter-left">La</div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="intro-door intro-door-right"
-        animate={opening ? { x: "100%" } : { x: 0 }}
-        transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1], delay: 0.1 }}
-      >
+      <div className={opening ? "intro-door intro-door-right opening" : "intro-door intro-door-right"}>
         <div className="intro-pane intro-pane-right" />
         <div className="intro-sheen intro-sheen-right" />
         <div className="intro-handle intro-handle-left">
@@ -289,7 +225,7 @@ function IntroGate({ onDone }: { onDone: () => void }) {
         </div>
         <div className="intro-edge intro-edge-left" />
         <div className="intro-letter intro-letter-right">Perle</div>
-      </motion.div>
+      </div>
 
       <div className="intro-center-line" />
       <div className="intro-bottom-badge">La Perle d'Orient</div>
@@ -409,12 +345,7 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
       <section className="hero">
         <img src={imageUrl("hero-la-perle.png")} alt="La Perle d'Orient lingerie premium" />
         <div className="hero-shadow" />
-        <motion.div
-          className="hero-content"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-        >
+        <div className="hero-content">
           <span className="eyebrow">Lingerie premium en Algerie</span>
           <h1>La lingerie comme une piece de joaillerie.</h1>
           <p>
@@ -429,7 +360,7 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
               L'univers de la marque
             </LinkButton>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       <TrustBar />
@@ -462,8 +393,8 @@ function HomePage({ navigate, addToCart }: { navigate: (path: string) => void; a
           </LinkButton>
         </div>
         <div className="product-grid">
-          {featured.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} navigate={navigate} addToCart={addToCart} />
+          {featured.map((product) => (
+            <ProductCard key={product.id} product={product} navigate={navigate} addToCart={addToCart} />
           ))}
         </div>
       </section>
@@ -569,8 +500,8 @@ function ShopPage({ navigate, addToCart }: PageContext) {
         </div>
       </div>
       <div className="product-grid shop-grid">
-        {filtered.map((product, index) => (
-          <ProductCard key={product.id} product={product} index={index} navigate={navigate} addToCart={addToCart} />
+        {filtered.map((product) => (
+          <ProductCard key={product.id} product={product} navigate={navigate} addToCart={addToCart} />
         ))}
       </div>
     </main>
@@ -579,25 +510,17 @@ function ShopPage({ navigate, addToCart }: PageContext) {
 
 function ProductCard({
   product,
-  index,
   navigate,
   addToCart,
 }: {
   product: Product;
-  index: number;
   navigate: (path: string) => void;
   addToCart: PageContext["addToCart"];
 }) {
   const [size, setSize] = useState(product.sizes[0]);
 
   return (
-    <motion.article
-      className="product-card"
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.18) }}
-    >
+    <article className="product-card">
       <LinkButton to={`/produit/${product.id}`} navigate={navigate} className="product-image">
         <img src={imageUrl(product.image)} alt={product.name} />
         <span>{product.badge}</span>
@@ -629,7 +552,7 @@ function ProductCard({
           </button>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
 
@@ -704,8 +627,8 @@ function ProductPage({ product, navigate, addToCart }: PageContext & { product: 
           </div>
         </div>
         <div className="product-grid">
-          {products.filter((item) => item.id !== product.id).slice(0, 3).map((item, index) => (
-            <ProductCard key={item.id} product={item} index={index} navigate={navigate} addToCart={addToCart} />
+          {products.filter((item) => item.id !== product.id).slice(0, 3).map((item) => (
+            <ProductCard key={item.id} product={item} navigate={navigate} addToCart={addToCart} />
           ))}
         </div>
       </section>
